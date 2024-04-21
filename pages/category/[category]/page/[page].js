@@ -10,7 +10,6 @@ import { siteConfig } from '@/lib/config'
  * @param {*} props
  * @returns
  */
-
 export default function Category(props) {
   // use different Layout file based on the path
   const Layout = getLayoutByTheme({ theme: siteConfig('THEME'), router: useRouter() })
@@ -24,7 +23,7 @@ export async function getStaticProps({ params: { category, page } }) {
 
   // make sure the page is a number
   props.posts = props.allPages?.filter(page => page.type === 'Post' && page.status === 'Published').filter(post => post && post.category && post.category.includes(category))
-  //  handle category posts count 
+  // handle category posts count
   props.postCount = props.posts.length
   // handle pagination
   props.posts = props.posts.slice(BLOG.POSTS_PER_PAGE * (page - 1), BLOG.POSTS_PER_PAGE * page)
