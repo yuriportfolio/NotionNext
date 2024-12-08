@@ -1,18 +1,17 @@
-import { getGlobalData } from '@/lib/notion/getNotionData'
-import { useEffect } from 'react'
 import BLOG from '@/blog.config'
-import { useRouter } from 'next/router'
-import { getLayoutByTheme } from '@/themes/theme'
-import { isBrowser } from '@/lib/utils'
-import { formatDateFmt } from '@/lib/formatDate'
 import { siteConfig } from '@/lib/config'
+import { getGlobalData } from '@/lib/db/getSiteData'
+import { isBrowser } from '@/lib/utils'
+import { formatDateFmt } from '@/lib/utils/formatDate'
+import { DynamicLayout } from '@/themes/theme'
+import { useEffect } from 'react'
 
+/**
+ * 归档首页
+ * @param {*} props
+ * @returns
+ */
 const ArchiveIndex = props => {
-  const router = useRouter();
-  const path = router.asPath;
-  const isArchive = path === '/archive';
-  const Layout = isArchive ? getLayoutByTheme({ theme: siteConfig('THEME'), router }) : getLayoutByTheme({ theme: siteConfig('THEME') });
-
   useEffect(() => {
     if (isBrowser) {
       const anchor = window.location.hash
@@ -27,20 +26,16 @@ const ArchiveIndex = props => {
     }
   }, [])
 
-  return <Layout {...props} />
+  const theme = siteConfig('THEME', BLOG.THEME, props.NOTION_CONFIG)
+  return <DynamicLayout theme={theme} layoutName='LayoutArchive' {...props} />
 }
 
-/**
- * Retrieves the static props for the archive page.
- * @returns {Promise<Object>} The static props object.
- */
-/**
- * Retrieves the static props for the archive page.
- * @returns {Promise<Object>} The static props object.
- */
-export async function getStaticProps() {
-  const props = await getGlobalData({ from: 'archive-index' })
-  props.posts = props.allPages?.filter(page => page.type === 'Post' && page.status === 'Published')
+export async function getStaticProps({ locale }) {
+  const props = await getGlobalData({ from: 'archive-index', locale })
+  // 处理分页
+  props.posts = props.allPages?.filter(
+    page => page.type === 'Post' && page.status === 'Published'
+  )
   delete props.allPages
 
   const postsSortByDate = Object.create(props.posts)
@@ -65,7 +60,13 @@ export async function getStaticProps() {
 
   return {
     props,
-    revalidate: parseInt(BLOG.NEXT_REVALIDATE_SECOND)
+    revalidate: process.env.EXPORT
+      ? undefined
+      : siteConfig(
+          'NEXT_REVALIDATE_SECOND',
+          BLOG.NEXT_REVALIDATE_SECOND,
+          props.NOTION_CONFIG
+        )
   }
 }
 
